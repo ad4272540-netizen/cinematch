@@ -1,0 +1,27 @@
+# Guardar como .github/workflows/sync-catalog.yml en tu repo.
+# Requiere el secret TMDB_API_KEY (Settings > Secrets and variables > Actions).
+name: Sync catálogo (TMDB, Perú)
+on:
+  schedule:
+    - cron: "0 9 * * *"   # todos los días, 04:00 hora de Lima
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node sync-catalog.mjs
+        env:
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          WATCH_REGION: PE
+      - name: Guardar catálogo si cambió
+        run: |
+          git config user.name "catalog-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add catalog.json
+          git diff --cached --quiet || (git commit -m "Actualiza catalog.json" && git push)
